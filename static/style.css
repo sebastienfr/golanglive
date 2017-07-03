@@ -1,0 +1,14 @@
+body {
+    background-color: lightblue;
+}
+
+h1 {
+    color: navy;
+    margin-left: 20px;
+}
+
+div {
+    color: lightgoldenrodyellow;
+    margin-left: 40px;
+    font-size: large;
+}
