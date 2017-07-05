@@ -1,0 +1,244 @@
+Servir du HTTP avec Go
+GDG Lille
+
+Sébastien FRIESS
+Developer, SFEIR
+https://sfeir.com
+@sebastienfriess
+
+* About Mi
+
+*Seb* dev backend chez SFEIR Lille
+
+- 11 ans de Java
+- 2 ans de Go (dont 1 année en prod)
+- Rhum addict
+- [[https://twitter.com/sebastienfriesss][@sebastienfriess]]
+
+.image golanglive/img/mi.jpg 150 _
+
+La présentation est disponible ici : [[http://go-talks.appspot.com/github.com/sebastienfr/golanglive/present/golanglive.slide][golang live HTTP]]
+
+* Le temps passe
+
+Go *1.6* a introduit *HTTP/2* il y 1 an 1/2
+Go *1.8* a amené le *HTTP/2* *Push* il y a bientôt 6 mois
+Tout ça nativement...
+
+.image golanglive/img/flying.png
+
+* Menu
+
+- Objectifs
+- Qu'est ce que je vous sers ?
+- Un serveur web HTTP/HTTP2
+- Le routage
+- Le handler web
+- Bonus : Le handler JSON
+- Le comparatif
+
+* Objectifs
+
+- Démo Web Go
+- HTTP/1 et HTTP/2 + PUSH
+- Avec l'API native Go
+- pas de lib, pas de poudre de ✨ _perlimpinpin_ ✨
+
+* Qu'est ce que je vous sers ?
+
+Modélisation des objets utilisés pour cette présentation
+
+.image golanglive/img/rum.jpg 450 _ 
+
+* Qu'est ce que je vous sers ?
+
+L'objet en Go, les *struct* :
+
+    type Rum struct {
+    	Name string
+    	Age int
+    	BottlingDate time.Time
+    }
+
+* Qu'est ce que je vous sers ?
+
+Pour simuler une source de données restons simple : une *map*
+    
+    var persistence map[string]Rum
+    
+    persistence = make(map[string]Rum, 100)
+    
+    persistence[Caroni] = Rum {
+        Name:"Caroni of Trinidad",
+        BottlingDate: time.Date(1996, 02, 01, 0,0,0,0,time.UTC),
+        Age:20,
+    }
+
+    persistence[WorthyPark] = Rum {
+        Name:"Worthy Park of Jamaica",
+        BottlingDate: time.Date(2007, 12, 30, 0,0,0,0,time.UTC),
+        Age:9,
+    }
+    
+Peuplée à la main dans une fonction *init*.
+
+* Un serveur web HTTP/HTTP2
+
+Un serveur web :
+
+    http.ListenAndServe(":8081", nil)
+    
+Un serveur web HTTP/2 ready et HTTPS à fortiori :
+    
+    http.ListenAndServeTLS(":8080", "server.crt", "server.key", nil)
+    
+Basique, pas de gestion des erreurs et pas de *Graceful* *Shutdown*   
+ 
+* Le routage
+
+Le clin d'oeil fonctionnel 😉
+
+Une interface pour les gouverner toutes : *Handler*
+
+    type Handler interface {
+        ServeHTTP(ResponseWriter, *Request)
+    }
+
+Une astuce Go pour faciliter le travail : *HandlerFunc*
+
+    type HandlerFunc func(ResponseWriter, *Request)
+    
+    func (f HandlerFunc) ServeHTTP(w ResponseWriter, r *Request) {
+    	f(w, r)
+    } 
+
+
+* Le routage
+
+Comment ça marche ? Pas de routeur ? Si !
+ 
+Un routeur par défaut *DefaultServeMux*, ce qui permet d'écrire
+
+Je sers mon contenu statique
+
+    http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+
+Je sers ma page d'accueil
+ 
+    http.HandleFunc("/index.html", rootHandler)
+    
+Bonus je sers une API
+
+    http.HandleFunc("/v1/rums/", dataHandler)
+    
+Plein de lib sympas permettent d'avoir du routage plus avancé comme [[http://www.gorillatoolkit.org/pkg/mux][Gorilla Mux]]   
+    
+* Le handler web
+
+On va créer une HandlerFunc spécifique pour notre *index.html*
+
+    func rootHandler(w http.ResponseWriter, r *http.Request) {
+        // ...
+    }
+
+* Le handler web
+
+Le templating en Go, ça existe ?
+
+    {{range $key, $element := .}}
+    <div class="panel panel-info">
+       <div class="panel-heading">
+           <h3 class="panel-title">{{$element.Name}}</h3>
+       </div>
+       <div class="panel-body">
+           <div class="form-group">
+               <label class="control-label col-sm-2">Age</label>
+               <div class="col-sm-10">
+                   <p class="form-control-static">{{$element.Age}}</p>
+               </div>
+           </div>
+           <div class="form-group">
+               <label class="control-label col-sm-2">Bottling date</label>
+               <div class="col-sm-10">
+                   <p class="form-control-static"> {{$element.BottlingDate}}</p>
+               </div>
+           </div>
+       </div>
+    </div>
+    {{end}}
+
+* Le handler web
+
+Et comment ça s'utilise ?
+
+    t := template.New("gopherTemplate")
+	t, err := t.ParseFiles("template/gopher.tmpl.html")
+	
+	w.Header().Set("Content-Type", "text/html; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	t.ExecuteTemplate(w, "gopher.tmpl.html", persistence)
+
+* Le handler web
+
+Et le *HTTPS/2* dans tout ça ? Et le *PUSH*
+
+Vérifions que notre client gère le HTTP/2 PUSH :
+    
+    pusher, ok := w.(http.Pusher)
+    if ok {
+        pusher.Push("/static/css/bootstrap.min.css", nil)
+    }
+
+En avant, on lui pousse toutes les ressources statiques nécessaires. Amazing !
+
+
+* Bonus : Le handler JSON
+
+On va créer une HandlerFunc spécifique pour notre API CRUD */v1/rums*
+
+    func dataHandler(w http.ResponseWriter, r *http.Request) {
+    
+        bytes, err := json.Marshal(persistence[caroni])
+        if err != nil {
+            http.Error(w, "Error marshalling rum", http.StatusInternalServerError)
+            return
+        }
+        
+        w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+        w.WriteHeader(http.StatusOK)
+        w.Write(bytes)
+    }
+    
+* Le comparatif
+    
+.image golanglive/img/fight.gif 500 _
+
+* Le comparatif
+
+Pour le modique poids de *7,5Mo* (imaginez dans un Docker... 😍)
+
+.image golanglive/img/http_perf.png _ 800
+.image golanglive/img/https_perf.png _ 800
+
+* Le comparatif
+
+*HTTP* waterfall
+
+.image golanglive/img/http_seq.png _ 800
+
+* Le comparatif
+
+*HTTPS* waterfall
+
+.image golanglive/img/https_seq.png _ 800
+
+* Questions ?
+
+.image golanglive/img/questions.jpg 450 _ 
+
+* Conferences:
+
+- [[http://golanguk.com/][Golang UK]], 16 au 18 Août
+- [[http://2017.dotgo.eu/][dotGo Paris]], 6 Novembre : *20%* *de* *réduction* avec le code *GDGLILLE*
+
+.image golanglive/img/dotGo.png 250 _ 
