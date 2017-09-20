@@ -1,5 +1,5 @@
 Servir du HTTP avec Go
-GDG Lille
+SFEIR Lille
 
 Sébastien FRIESS
 Developer, SFEIR
@@ -238,7 +238,6 @@ Pour le modique poids de *7,5Mo* (imaginez dans un Docker... 😍)
 
 * Conferences:
 
-- [[http://golanguk.com/][Golang UK]], 16 au 18 Août
 - [[http://2017.dotgo.eu/][dotGo Paris]], 6 Novembre : *20%* *de* *réduction* avec le code *GDGLILLE*
 
 .image golanglive/img/dotGo.png 250 _ 
