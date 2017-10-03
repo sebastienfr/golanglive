@@ -18,6 +18,7 @@ type Rum struct {
 }
 
 var persistence map[string]Rum
+var tmpl *template.Template
 
 func init() {
 	persistence = make(map[string]Rum, 10)
@@ -32,6 +33,13 @@ func init() {
 		Name:         "Worthy Park of Jamaica",
 		BottlingDate: time.Date(2007, 12, 30, 0, 0, 0, 0, time.UTC),
 		Age:          9,
+	}
+
+	var err error
+	tmpl = template.New("gopherTemplate")
+	tmpl, err = tmpl.ParseFiles("template/gopher.tmpl.html")
+	if err != nil {
+		log.Printf("Error parsing template %v", err)
 	}
 }
 
@@ -61,15 +69,9 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	t := template.New("gopherTemplate")
-	t, err := t.ParseFiles("template/gopher.tmpl.html")
-	if err != nil {
-		log.Printf("Error parsing template %v", err)
-	}
-
 	w.Header().Set("Content-Type", "text/html; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
-	err = t.ExecuteTemplate(w, "gopher.tmpl.html", persistence)
+	err := tmpl.ExecuteTemplate(w, "gopher.tmpl.html", persistence)
 	if err != nil {
 		log.Printf("Error executing template %v", err)
 	}
