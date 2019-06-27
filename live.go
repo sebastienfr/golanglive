@@ -89,7 +89,10 @@ func dataHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 
-	w.Write(bytes)
+	_, err = w.Write(bytes)
+	if err != nil {
+		log.Printf("error sending data %v", err)
+	}
 }
 
 func main() {
@@ -101,11 +104,17 @@ func main() {
 
 	log.Println("launching http on localhost:8081...")
 	go func() {
-		http.ListenAndServe(":8081", nil)
+		err := http.ListenAndServe(":8081", nil)
+		if err != nil {
+			log.Printf("error starting secure webserver %v", err)
+		}
 	}()
 
 	log.Println("launching https on localhost:8080...")
-	http.ListenAndServeTLS(":8080", "server.crt", "server.key", nil)
+	err := http.ListenAndServeTLS(":8080", "server.crt", "server.key", nil)
+	if err != nil {
+		log.Printf("error starting secure webserver %v", err)
+	}
 
 	log.Println("...servers stopped")
 }
