@@ -10,8 +10,8 @@ https://sfeir.com
 
 *Seb* dev backend chez SFEIR Lille
 
-- 11 ans de Java
-- 2 ans de Go (dont 1 année en prod)
+- 13 ans de Java
+- 3 ans de Go (dont 1 année en prod)
 - Rhum addict
 - [[https://twitter.com/sebastienfriesss][@sebastienfriess]]
 
@@ -21,8 +21,8 @@ La présentation est disponible ici : [[http://go-talks.appspot.com/github.com/s
 
 * Le temps passe
 
-Go *1.6* a introduit *HTTP/2* il y 1 an 1/2
-Go *1.8* a amené le *HTTP/2* *Push* il y a bientôt 6 mois
+Go *1.6* a introduit *HTTP/2*
+Go *1.8* a amené le *HTTP/2* *Push*
 Tout ça nativement...
 
 .image golanglive/img/flying.png
@@ -238,6 +238,6 @@ Pour le modique poids de *7,5Mo* (imaginez dans un Docker... 😍)
 
 * Conferences:
 
-- [[http://2017.dotgo.eu/][dotGo Paris]], 6 Novembre : *20%* *de* *réduction* avec le code *GDGLILLE*
+- [[https://2020.dotgo.eu/][dotGo Paris]], 30 Mars 2020
 
 .image golanglive/img/dotGo.png 250 _ 
